@@ -5,3 +5,5 @@ scikit-learn
 #pickle
 kagglehub
 uvicorn
+tensorflow
+nltk

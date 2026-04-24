@@ -4,55 +4,39 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import pickle
-from train_model import deploy_model
 import os
 import kagglehub
 import pandas as pd
+import keras
+from kerasTransformer.model_train import *
 
 # Agregando los datos nuevos -----------------------------------------
 path = kagglehub.dataset_download("sbhatti/financial-sentiment-analysis")
 data = pd.read_csv(path + "/data.csv")
 # --------------------------------------------------------------------
 
-if os.path.exists('model.pkl'):
+if os.path.exists('model.keras'):
     print("MODEL FOUND!")
 else:
-    train_X = data['Sentence']
-    train_y = data['Sentiment']
-
-    # Volviendo las clasificaciones numéricas ------------------------------
-    for r in range(len(train_y)):
-        if train_y[r] == 'positive':
-            train_y[r] = 2
-        elif train_y[r] == 'negative':
-            train_y[r] = 0
-        else:
-            train_y[r] = 1
-    #------------------------------------------------------------------------
-
-    deploy_model(train_X, train_y.astype(int))
+    deploy_model()
 
 app = FastAPI()
 
-with open("model.pkl", "rb") as f:
-    model = pickle.load(f)
-
-with open("vectorizer.pkl", "rb") as f:
-    vectorizer = pickle.load(f)
+with open("model.keras", "rb") as f:
+    model = keras.saving.load_model("model.keras")
 
 class InputData(BaseModel):
     text: str
 
 @app.post("/predict")
-def predict(data: InputData): ## Equivalente a su score.py
-    
-    X = vectorizer.transform([data.text])
-
-    # Predict
-    pred = model.predict(X)[0]
-    prob = model.predict_proba(X)[0][1]
-
+def predict(comment: InputData): ## Equivalente a su score.py
+    # User Input Prediction
+    cleaned_comment = re.sub(r'[^a-zA-Z\s]', '', comment.lower())
+    cleaned_comment = ' '.join(word for word in cleaned_comment.split() if word not in stop_words)
+    sequence = tokenizer.texts_to_sequences([cleaned_comment])
+    padded_sequence = pad_sequences(sequence, maxlen=100, truncating='post', padding='post')
+    prediction = model.predict(padded_sequence)
     return {
-        "prediction": int(pred),
-        "probability": float(prob)
+        'prediction': prediction.argmax(),
+        'probability': prediction.max()
     }
