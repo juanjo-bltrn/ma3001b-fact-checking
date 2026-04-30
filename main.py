@@ -30,13 +30,21 @@ class InputData(BaseModel):
 
 @app.post("/predict")
 def predict(comment: InputData): ## Equivalente a su score.py
+    comment = comment.text
     # User Input Prediction
     cleaned_comment = re.sub(r'[^a-zA-Z\s]', '', comment.lower())
     cleaned_comment = ' '.join(word for word in cleaned_comment.split() if word not in stop_words)
     sequence = tokenizer.texts_to_sequences([cleaned_comment])
     padded_sequence = pad_sequences(sequence, maxlen=100, truncating='post', padding='post')
     prediction = model.predict(padded_sequence)
-    return {
-        'prediction': prediction.argmax(),
-        'probability': prediction.max()
+    prediction = prediction[0]
+
+    pred = prediction.argmax()
+    prob = prediction.max()
+
+    prediction = {
+        'prediction': int(pred),
+        'probability': float(prob)
     }
+
+    return prediction

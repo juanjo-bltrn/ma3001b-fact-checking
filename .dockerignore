@@ -1,0 +1,5 @@
+.git*
+**/*.pyc
+.venv/
+__pycache__/
+kerasTransformer/__pycache__/

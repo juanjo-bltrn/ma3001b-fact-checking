@@ -7,3 +7,6 @@ kagglehub
 uvicorn
 tensorflow
 nltk
+jinja2
+python-multipart
+imblearn
