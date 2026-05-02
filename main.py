@@ -2,18 +2,14 @@
 #uvicorn main:app --reload
 
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, json
 import pickle
 import os
 import kagglehub
 import pandas as pd
 import keras
 from kerasTransformer.model_train import *
-
-# Agregando los datos nuevos -----------------------------------------
-path = kagglehub.dataset_download("sbhatti/financial-sentiment-analysis")
-data = pd.read_csv(path + "/data.csv")
-# --------------------------------------------------------------------
+import ast
 
 if os.path.exists('model.keras'):
     print("MODEL FOUND!")
@@ -26,25 +22,33 @@ with open("model.keras", "rb") as f:
     model = keras.saving.load_model("model.keras")
 
 class InputData(BaseModel):
-    text: str
+    claim: str
+    contexts: list[str]
 
 @app.post("/predict")
 def predict(comment: InputData): ## Equivalente a su score.py
-    comment = comment.text
+    #comment = comment.text
+    #print( "Received Comment:", comment)  # Debugging line to check the input format
     # User Input Prediction
-    cleaned_comment = re.sub(r'[^a-zA-Z\s]', '', comment.lower())
-    cleaned_comment = ' '.join(word for word in cleaned_comment.split() if word not in stop_words)
+    #comment = ast.literal_eval(comment)
+    cleaned_comment = '[CLS] Claim: ' + comment.claim + " [SEP] Context: " + " ".join(comment.contexts)
+    print("Cleaned Comment:", cleaned_comment)
+
     sequence = tokenizer.texts_to_sequences([cleaned_comment])
     padded_sequence = pad_sequences(sequence, maxlen=100, truncating='post', padding='post')
     prediction = model.predict(padded_sequence)
     prediction = prediction[0]
 
     pred = prediction.argmax()
+    pred = int(pred)
+    if pred == 0:
+        pred_label = 'REFUTED'
+    else:
+        pred_label = 'SUPPORTED'
     prob = prediction.max()
 
     prediction = {
-        'prediction': int(pred),
-        'probability': float(prob)
+        'predicted_label': pred_label
     }
 
     return prediction

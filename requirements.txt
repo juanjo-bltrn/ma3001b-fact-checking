@@ -10,3 +10,6 @@ nltk
 jinja2
 python-multipart
 imblearn
+matplotlib
+json
+ast

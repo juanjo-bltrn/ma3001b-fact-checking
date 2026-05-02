@@ -20,7 +20,7 @@ embedding_dim = 32  # We can Adjust the embedding dimension based on our prefere
 num_heads = 2
 ff_dim = 32
 
-inputs = Input(shape=(100,))
+inputs = Input(shape=(1000,))
 embedding_layer = Embedding(input_dim=10000, output_dim=embedding_dim)(inputs)
 transformer_block = embedding_layer
 
@@ -33,6 +33,6 @@ transformer_block = tf.keras.layers.Conv1D(filters=ff_dim, kernel_size=1, activa
 transformer_block = tf.keras.layers.GlobalAveragePooling1D()(transformer_block)
 transformer_block = Dropout(0.1)(transformer_block)
 transformer_block = Dense(20, activation='relu')(transformer_block)
-output_layer = Dense(3, activation='softmax')(transformer_block)
+output_layer = Dense(2, activation='softmax')(transformer_block)
 
 model = Model(inputs=inputs, outputs=output_layer)
